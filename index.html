@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Peripheral Blood RNA-Seq in Acute Ischemic Stroke · ICCA 2026</title>
+<meta name="description" content="A reproducible bulk RNA-Seq pipeline that runs on a 16 GB workstation, applied to the GSE122709 stroke PBMC dataset, with RUVg, subsampling and cell-composition sensitivity analyses. ICCA 2026, ACM proceedings.">
+<meta name="keywords" content="RNA-Seq, ischemic stroke, peripheral blood, PBMC, differential expression, DESeq2, RUVg, unwanted variation, sensitivity analysis, GSE122709, reproducible pipeline, ICCA 2026">
+<meta name="author" content="Samrat Kumar Dey, Zaynab Shakkour">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Differential Gene Expression Analysis of Peripheral Blood RNA-Seq Data in Acute Ischemic Stroke Patients">
+<meta property="og:description" content="Reproducible low-resource RNA-Seq pipeline and sensitivity analysis on GSE122709. ICCA 2026.">
+<meta property="og:image" content="static/images/fig2_pipeline.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230f1d2a'/%3E%3Cpath d='M11 5c0 6 10 6 10 11s-10 5-10 11M21 5c0 6-10 6-10 11s10 5 10 11' fill='none' stroke='%23f0677e' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&family=Spectral:ital,wght@0,500;0,600;1,500&display=swap">
+<link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-pdf" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path fill="none" stroke="currentColor" stroke-width="1.8" d="M14 3v5h5"/><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" d="M8.5 13h7M8.5 16.5h5"/></symbol>
+  <symbol id="i-slides" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M12 16v4M8 20h8M7 12l3-3 2 2 4-4"/></symbol>
+  <symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="2.8" fill="none" stroke="currentColor" stroke-width="1.8"/><path fill="none" stroke="currentColor" stroke-width="1.8" d="M5 6v12c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8V6M5 12c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="2.5" width="6" height="10" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M6 10.5a6 6 0 0 0 12 0M12 16.5V21M8 21h8"/></symbol>
+  <symbol id="i-github" viewBox="0 0 24 24"><path fill="currentColor" d="M12 1.8a10.2 10.2 0 0 0-3.2 19.9c.5.1.7-.2.7-.5v-1.8c-2.8.6-3.4-1.2-3.4-1.2-.5-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 .1 1.6 1 1.6 1 .9 1.6 2.4 1.1 3 .9.1-.7.4-1.1.6-1.4-2.3-.3-4.6-1.1-4.6-5 0-1.1.4-2 1-2.7-.1-.3-.5-1.3.1-2.7 0 0 .9-.3 2.8 1a9.6 9.6 0 0 1 5.1 0c1.9-1.3 2.8-1 2.8-1 .6 1.4.2 2.4.1 2.7.6.7 1 1.6 1 2.7 0 3.9-2.4 4.7-4.6 5 .4.3.7.9.7 1.8v2.7c0 .3.2.6.7.5A10.2 10.2 0 0 0 12 1.8z"/></symbol>
+  <symbol id="i-quote" viewBox="0 0 24 24"><path fill="currentColor" d="M4 18v-5.2C4 8.6 6.2 6 9.8 5.4l.6 1.7C8.3 7.8 7.3 9.2 7.2 11H10v7zm9.5 0v-5.2c0-4.2 2.2-6.8 5.8-7.4l.6 1.7c-2.1.7-3.1 2.1-3.2 3.9h2.8v7z"/></symbol>
+  <symbol id="i-text" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M4 6h16M4 10h16M4 14h16M4 18h10"/></symbol>
+  <symbol id="i-chip" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" d="M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></symbol>
+</svg>
+
+<nav class="nav" aria-label="Sections">
+  <div class="wrap">
+    <a class="brand" href="#top">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="var(--ink)"/><path d="M11 5c0 6 10 6 10 11s-10 5-10 11M21 5c0 6-10 6-10 11s10 5 10 11" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round"/></svg>
+      <span>Stroke PBMC · GSE122709</span>
+    </a>
+    <div class="nav-links">
+      <a href="#abstract">Overview</a>
+      <a href="#dataset">Dataset</a>
+      <a href="#pipeline">Pipeline</a>
+      <a href="#qc">QC</a>
+      <a href="#de">Expression</a>
+      <a href="#sensitivity">Sensitivity</a>
+      <a href="#enrichment">Enrichment</a>
+      <a href="#discussion">Discussion</a>
+      <a href="#citation">Citation</a>
+    </div>
+    <button class="theme-btn" id="themeBtn" type="button" aria-label="Toggle dark mode"><svg><use href="#i-moon"/></svg></button>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <span class="podium icca">
+          <span class="dot"><svg><use href="#i-mic"/></svg></span>
+          Accepted · ICCA 2026 · ACM Proceedings · Dhaka, Bangladesh
+        </span>
+        <h1>Differential Gene Expression Analysis of Peripheral Blood RNA-Seq Data <em>in Acute Ischemic Stroke Patients</em></h1>
+
+        <div class="authors">
+          <span><a href="https://orcid.org/0000-0002-7999-8576" target="_blank" rel="noopener">Samrat Kumar Dey</a><sup>1,*</sup></span>
+          <span><a href="https://orcid.org/0000-0002-5436-1798" target="_blank" rel="noopener">Zaynab Shakkour</a><sup>1</sup></span>
+        </div>
+        <div class="affils">
+          <span><sup>1</sup>MU Institute for Data Science and Informatics, University of Missouri, Columbia, Missouri, USA</span>
+          <span><sup>*</sup>Corresponding author · sdey@missouri.edu</span>
+        </div>
+
+        <div class="btns">
+          <a class="btn" href="static/pdf/ICCA2026_Paper208.pdf" target="_blank" rel="noopener"><svg><use href="#i-pdf"/></svg>Paper</a>
+          <a class="btn acm" href="static/pdf/ICCA2026_Paper208_slides.pdf" target="_blank" rel="noopener"><svg><use href="#i-slides"/></svg>Slides <span class="tag">ICCA 2026</span></a>
+          <a class="btn ghost" href="https://github.com/CIMILab/GEA-RNA-Seq" target="_blank" rel="noopener"><svg><use href="#i-github"/></svg>Code</a>
+          <a class="btn ghost" href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE122709" target="_blank" rel="noopener"><svg><use href="#i-db"/></svg>GEO Data</a>
+          <a class="btn ghost" href="#abstract"><svg><use href="#i-text"/></svg>Abstract</a>
+          <a class="btn ghost" href="#citation"><svg><use href="#i-quote"/></svg>BibTeX</a>
+        </div>
+
+        <div class="chips">
+          <span class="chip">Bulk RNA-Seq</span>
+          <span class="chip">GSE122709 · 15 PBMC</span>
+          <span class="chip">HISAT2 · featureCounts</span>
+          <span class="chip">DESeq2 + apeglm</span>
+          <span class="chip">RUVg (k = 2)</span>
+          <span class="chip">16 GB workstation</span>
+        </div>
+      </div>
+
+      <aside class="glance" aria-labelledby="glance-h">
+        <div class="eyebrow">Headline result</div>
+        <h3 id="glance-h">Differentially expressed genes before and after RUVg correction</h3>
+        <div class="legend">
+          <span><i class="l-def"></i>Default (median-of-ratios)</span>
+          <span><i class="l-ruv"></i>RUVg (k = 2)</span>
+        </div>
+        <svg class="degchart" id="degchart" viewBox="0 0 420 236" role="img" aria-label="Log-scale bar chart of DEG counts per contrast under default normalization and after RUVg correction"></svg>
+        <p class="small muted">DEGs at p<sub>adj</sub> &lt; 0.05 and |log<sub>2</sub>FC| &gt; 1, log scale. The 24 h signature falls 99.7%; the 7 d signature keeps 63 of 92 genes.</p>
+      </aside>
+    </div>
+
+    <div class="stats" role="list">
+      <div class="stat" role="listitem"><b class="num">95.1%</b><span>mean HISAT2 alignment rate (15 samples)</span></div>
+      <div class="stat" role="listitem"><b class="num">r = −0.905</b><span>PC1 vs. FastQC duplication rate</span></div>
+      <div class="stat" role="listitem"><b class="num">9,219 → 28</b><span>T24h vs. CTRL DEGs after RUVg (−99.7%)</span></div>
+      <div class="stat" role="listitem"><b class="num">92 → 63</b><span>D7 vs. CTRL DEGs after RUVg (−32%)</span></div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ ABSTRACT ============ -->
+<section class="sec alt" id="abstract">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Abstract</span>
+      <h2>A reproducible pipeline, and a test of what survives correction</h2>
+    </div>
+    <div class="two">
+      <div class="read stack">
+        <p>Acute ischemic stroke (AIS) triggers a rapid systemic immune response that is reflected in the peripheral blood transcriptome within hours of onset. Reproducible reanalysis of public RNA-sequencing (RNA-Seq) datasets is essential to consolidate findings, yet many available workflows depend on high-performance computing infrastructure.</p>
+        <p>We present a fully reproducible bulk RNA-Seq pipeline that runs end-to-end on a commodity workstation and apply it to the NCBI GEO dataset GSE122709, comprising 15 peripheral blood mononuclear cell (PBMC) samples: 5 healthy controls (CTRL), 5 stroke samples at 24 h (T24h), and 5 at 7 d (D7) post-onset. The pipeline integrates SRA Toolkit retrieval, FastQC/MultiQC quality control, splice-aware alignment to GRCh38 with HISAT2, gene-level counting with featureCounts against GENCODE v44, differential-expression analysis using DESeq2 with apeglm shrinkage, and functional enrichment using GO, KEGG, and GSEA.</p>
+        <p>We achieved a mean alignment rate of 95.1% and, under default normalization, identified 9,219 differentially expressed genes (DEGs) at 24 h versus controls, 92 at 7 d versus controls, and 5,851 for T24h versus D7. Principal-component analysis colored by QC metrics revealed a strong correlation between PC1 and the FastQC duplication rate (r = −0.905, p &lt; 10<sup>−4</sup>). Housekeeping-based RUVg correction reduced the T24h-versus-CTRL DEG count to 28, a 99.7% reduction, whereas the 7 d-versus-control signature remained comparatively robust, decreasing from 92 to 63 DEGs (32% reduction). A 10-gene granulocyte-marker score showed no significant compositional shift (Kruskal–Wallis p = 0.31), and 3-of-5 subsampling confirmed that the 7 d signature is highly sensitive to sample size.</p>
+      </div>
+      <div class="stack">
+        <div class="card">
+          <span class="k">RQ1 · DIFFERENTIAL EXPRESSION</span>
+          <h4>Which PBMC genes change after stroke?</h4>
+          <p>Which genes are differentially expressed in PBMCs of acute ischemic stroke patients compared with healthy controls?</p>
+          <span class="maps">Answered by Figure 4 · 9,219 DEGs at 24 h, 92 at 7 d</span>
+        </div>
+        <div class="card">
+          <span class="k">RQ2 · ACUTE VS. SUBACUTE</span>
+          <h4>How do 24 h and 7 d profiles differ?</h4>
+          <p>How do transcriptomic profiles differ between the acute (24 h) and subacute (7 d) post-stroke groups, analysed as independent cross-sectional cohorts?</p>
+          <span class="maps">Answered by Table 3 · 5,851 DEGs T24h vs. D7</span>
+        </div>
+        <div class="card">
+          <span class="k">RQ3 · PATHWAYS &amp; ROBUSTNESS</span>
+          <h4>Which pathways are enriched, and how robust are they?</h4>
+          <p>Which pathways are enriched among the DEGs, and how robust are the findings under unwanted-variation correction, subsampling and cell-composition adjustment?</p>
+          <span class="maps">Answered by Tables 3–4, Figures 5–7</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="three" style="margin-top:1.25rem">
+      <div class="card"><span class="k">C1 · LOW-RESOURCE PIPELINE</span><p>A complete, open-source bulk RNA-Seq pipeline that executes end-to-end on a 16 GB commodity workstation (Windows 11 + WSL2), demonstrated on 15 samples and ~98 GB of raw FASTQ.</p></div>
+      <div class="card"><span class="k">C2 · VALIDATED DESIGN</span><p>A rigorous DGE analysis of GSE122709 with corrected timepoint labels (24 h and 7 d, per the GEO series description) and biological validation of the SRR-to-condition mapping via the platelet chemokine PPBP/CXCL7.</p></div>
+      <div class="card"><span class="k">C3 · SENSITIVITY SUITE</span><p>A sensitivity assessment of unwanted variation (RUVg), sample size (subsampling) and cell-type composition (granulocyte marker score): a template for robust reporting in cross-cohort blood transcriptomics.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ BACKGROUND ============ -->
+<section class="sec" id="background">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Background · Figure 1</span>
+      <h2>Why look at blood after a stroke?</h2>
+      <p class="lede read">Ischemic stroke is caused by a clot that blocks a cerebral artery. Within hours, peripheral leukocytes are mobilised, travel to the injured brain and contribute to both damage and repair. Brain tissue is inaccessible in living patients, so PBMCs serve as a clinically tractable view of the post-stroke immune state.</p>
+    </div>
+    <div class="two" style="align-items:start">
+      <figure>
+        <button class="plate" type="button" data-zoom="static/images/fig1_ais.png" data-cap="Figure 1. Overview of acute ischemic stroke pathophysiology, illustrating arterial occlusion, cerebral blood flow disruption, and progression to infarct.">
+          <img src="static/images/fig1_ais.png" alt="Illustration of acute ischemic stroke: a clot blocks a cerebral artery, blood flow stops and the brain region progresses from early ischemia to infarct." loading="lazy">
+          <span class="zoom">click to zoom</span>
+        </button>
+        <figcaption><b>Figure 1.</b> Overview of acute ischemic stroke pathophysiology, illustrating arterial occlusion, cerebral blood flow disruption, and progression to infarct.</figcaption>
+      </figure>
+      <div class="stack">
+        <div class="facts" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr);margin-top:0">
+          <div class="card fact"><b>2nd</b><span>leading cause of mortality worldwide</span></div>
+          <div class="card fact"><b>~85%</b><span>of all strokes are ischemic</span></div>
+        </div>
+        <div class="card">
+          <span class="k">THE GAP</span>
+          <p>Bulk RNA-Seq gives an unbiased, genome-wide view of these changes, but reproducible whole-genome analysis has historically required HPC resources. When case and control libraries differ systematically in complexity (e.g. duplication rate), the default DESeq2 median-of-ratios normalization can bias DEG estimates unless unwanted-variation correction is applied.</p>
+        </div>
+        <p class="callout">To our knowledge, no prior work has published a complete commodity-workstation pipeline for the GSE122709 PBMC dataset with an integrated sensitivity-to-unwanted-variation assessment.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DATASET ============ -->
+<section class="sec alt" id="dataset">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Dataset · GSE122709 · PRJNA506047</span>
+      <h2>15 PBMC libraries in three cross-sectional groups</h2>
+      <p class="lede read">Illumina HiSeq X Ten, 150 bp paired-end, 41–51 M read pairs per sample. Timepoint labels follow the GEO series <code>overall_design</code> field (24 h and 7 days); a within-subject pairing test (same-index r = 0.928 vs. cross-index r = 0.936) found no correlation excess, so the design is treated as cross-sectional.</p>
+    </div>
+    <div class="two">
+      <div class="card">
+        <span class="k">STUDY GROUPS</span>
+        <dl class="kv">
+          <dt><span class="gdot CTRL"></span>CTRL</dt><dd>5 healthy controls · SRR8207876–880</dd>
+          <dt><span class="gdot T24h"></span>T24h</dt><dd>5 acute-stroke samples drawn at 24 hours · SRR8207886–890</dd>
+          <dt><span class="gdot D7"></span>D7</dt><dd>5 subacute-stroke samples drawn at 7 days · SRR8207881–885</dd>
+          <dt>Genes tested</dt><dd class="num">23,995 after pre-filtering (≥ 10 counts in ≥ 5 of 15 samples)</dd>
+          <dt>Raw data</dt><dd>~98 GB FASTQ, 30 files</dd>
+        </dl>
+      </div>
+      <div class="card">
+        <span class="k">LABEL VALIDATION · PPBP / CXCL7 MEAN RAW COUNTS</span>
+        <p>The platelet alpha-granule chemokine falls monotonically from controls to 24 h, a 30× collapse consistent with acute platelet consumption at the thrombus.</p>
+        <div class="stack" style="gap:.55rem;margin-top:.3rem">
+          <div class="hbar"><span class="g-ctrl">CTRL</span><span class="bar"><i style="width:100%;background:var(--g-ctrl)"></i></span><span class="v">11,595</span></div>
+          <div class="hbar"><span class="g-d7">D7</span><span class="bar"><i style="width:69.5%;background:var(--g-d7)"></i></span><span class="v">8,062</span></div>
+          <div class="hbar"><span class="g-t24">T24h</span><span class="bar"><i style="width:3.3%;background:var(--g-t24)"></i></span><span class="v">384</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-head" style="margin-top:2.25rem;margin-bottom:1rem">
+      <span class="eyebrow">Extended results · per-sample metadata</span>
+      <h3>Sample sheet with QC metrics</h3>
+    </div>
+    <div class="tbl-wrap">
+      <table id="sampleTbl" class="sortable-tbl">
+        <thead><tr>
+          <th class="sortable" data-t="s">SRA run</th><th class="sortable" data-t="s">Sample</th><th class="sortable" data-t="s">Group</th>
+          <th class="sortable r" data-t="n">Duplication %</th><th class="sortable r" data-t="n">Read pairs assigned %</th>
+          <th class="sortable r" data-t="n">PC1</th><th class="sortable r" data-t="n">Granulocyte score</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="tbl-note">Duplication from FastQC; percentage of read pairs assigned to genes from featureCounts; PC1 from the top-1000-variance VST counts (Figure 3); granulocyte score = mean log<sub>2</sub> CPM of 10 markers. Click a column header to sort.</p>
+  </div>
+</section>
+
+<!-- ============ PIPELINE ============ -->
+<section class="sec" id="pipeline">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Pipeline · Figure 2 · Algorithm 1</span>
+      <h2>Seven stages, with unwanted-variation correction before testing</h2>
+      <p class="lede read">The pipeline follows the canonical bulk RNA-Seq workflow but interleaves a housekeeping-based RUVg stage between quantification and differential-expression testing. Select a stage for details.</p>
+    </div>
+    <div class="pipe">
+      <div>
+        <div class="steps" role="tablist" aria-label="Pipeline stages" id="steps"></div>
+        <div class="step-panel" id="stepPanel" role="tabpanel" aria-live="polite"></div>
+      </div>
+      <figure>
+        <button class="plate" type="button" data-zoom="static/images/fig2_pipeline.png" data-cap="Figure 2. The end-to-end bulk RNA-Seq analysis pipeline; the seven stages map one-to-one to Algorithm 1.">
+          <img src="static/images/fig2_pipeline.png" alt="Seven-stage pipeline: data acquisition, quality control, genome alignment, quantification, RUVg correction, differential expression, functional enrichment." loading="lazy">
+          <span class="zoom">click to zoom</span>
+        </button>
+        <figcaption><b>Figure 2.</b> The end-to-end bulk RNA-Seq analysis pipeline. The seven sequential stages map one-to-one to the algorithmic specification in Algorithm 1.</figcaption>
+      </figure>
+    </div>
+
+    <div class="two" style="margin-top:2rem">
+      <div class="stack">
+        <div class="card">
+          <span class="k">DIFFERENTIAL EXPRESSION MODEL</span>
+          <p>Read count K<sub>ij</sub> for gene i in sample j is negative binomial, with size factor s<sub>j</sub> from median-of-ratios and a log-linear model of condition:</p>
+          <div class="eq">K<sub>ij</sub> ~ NB(μ<sub>ij</sub>, α<sub>i</sub>), &nbsp; μ<sub>ij</sub> = s<sub>j</sub> q<sub>ij</sub>, &nbsp; log<sub>2</sub> q<sub>ij</sub> = x<sub>j</sub><sup>⊤</sup>β<sub>i</sub></div>
+          <p>Wald test, apeglm log-fold-change shrinkage, Benjamini–Hochberg FDR. A gene is a DEG when p<sub>adj</sub> &lt; 0.05 and |log<sub>2</sub>FC| &gt; 1. GSEA ranks genes by</p>
+          <div class="eq">r<sub>i</sub> = sign(log<sub>2</sub>FC<sub>i</sub>) · (−log<sub>10</sub> p<sub>i</sub>)</div>
+        </div>
+        <div class="card">
+          <span class="k">COMPUTE ENVIRONMENT</span>
+          <dl class="kv">
+            <dt>Hardware</dt><dd>Windows 11 + WSL2 / Ubuntu 22.04, 16 GB RAM</dd>
+            <dt>Stages 1–4</dt><dd>bash scripts, processed one sample at a time</dd>
+            <dt>Stages 5–6</dt><dd>Python 3.11, pydeseq2, NumPy / SciPy</dd>
+            <dt>Stage 7</dt><dd>Enrichr via the <code>gseapy</code> client</dd>
+            <dt>Peak memory</dt><dd>below 16 GB throughout</dd>
+          </dl>
+        </div>
+      </div>
+      <div class="stack">
+        <pre class="algo" aria-label="Algorithm 1"><span class="c">Algorithm 1 · End-to-end RNA-Seq pipeline for stroke PBMC</span>
+<span class="s">Require</span> samples S = {s1..s15}, GRCh38 R, GENCODE v44 G, housekeeping set H
+<span class="s">Stage 1</span>  for s in S: prefetch(s); fasterq-dump(s, --split-3)
+<span class="s">Stage 2</span>  for s in S: FastQC(s);  MultiQC()
+<span class="s">Stage 3</span>  for s in S: B_s ← HISAT2(s, R, --dta -p 4)
+                      B_s ← SAMtools-sort(B_s, -m 512M -@ 2)
+<span class="s">Stage 4</span>  C  ← featureCounts({B_s}, G, -s 0 -p -B -C)
+          C' ← genes with ≥10 counts in ≥5 samples
+<span class="s">Stage 5</span>  M  ← log2(CPM(C'_H) + 1)        <span class="c"># 21 housekeeping genes</span>
+          W  ← SVD_k=2(M − mean(M))       <span class="c"># W = [W1, W2]</span>
+<span class="s">Stage 6</span>  for κ in {T24h:CTRL, D7:CTRL, T24h:D7}:
+            fit NB GLM ~ condition         <span class="c"># default</span>
+            fit NB GLM ~ W1 + W2 + condition <span class="c"># RUVg</span>
+            Wald; apeglm; BH-FDR
+            D_κ ← {g : padj < 0.05 ∧ |LFC| > 1}
+<span class="s">Stage 7</span>  for κ: ORA(D_κ, KEGG, GO-BP); GSEA(rank_κ)
+<span class="s">return</span> D, E</pre>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Tool</th><th>Version</th><th>Key parameters</th></tr></thead>
+            <tbody>
+              <tr><td>SRA Toolkit</td><td>3.0.7</td><td><code>prefetch</code>; <code>fasterq-dump --split-3</code></td></tr>
+              <tr><td>FastQC / MultiQC</td><td>0.12.1 / 1.18</td><td>defaults; <code>--interactive</code></td></tr>
+              <tr><td>HISAT2</td><td>2.2.1</td><td><code>--dta -p 4</code>, unstranded</td></tr>
+              <tr><td>SAMtools</td><td>1.18</td><td><code>sort -m 512M -@ 2</code></td></tr>
+              <tr><td>featureCounts</td><td>2.0.6</td><td><code>-p -s 0 -B -C -t exon</code></td></tr>
+              <tr><td>GENCODE</td><td>v44</td><td>62,700 features</td></tr>
+              <tr><td>pydeseq2</td><td>0.5.4</td><td><code>~condition</code> / <code>~W1+W2+cond</code></td></tr>
+              <tr><td>RUVg (SVD)</td><td>—</td><td>k = 2, 21 housekeeping genes</td></tr>
+              <tr><td>gseapy / Enrichr</td><td>1.3.1</td><td>KEGG_2021, GO_BP_2023</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="tbl-note">Table 1. Software stack and key parameters.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ QC ============ -->
+<section class="sec alt" id="qc">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Results · Quality control &amp; clustering · Table 2 · Figure 3</span>
+      <h2>Good data, with one pattern that needs scrutiny</h2>
+      <p class="lede read">All 30 FASTQ files passed the core FastQC checks (Phred Q &gt; 30, GC 44–50%, no adapter contamination). Mean HISAT2 alignment was 95.1% (range 92.45–96.04%) and no sample was excluded. But T24h libraries show systematically lower duplication than either other group.</p>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Group</th><th class="r">n</th><th class="r">Reads (M)</th><th class="r">Dup (%)</th><th class="r">Align (%)</th><th class="r">Assigned (%)</th></tr></thead>
+        <tbody>
+          <tr><td><span class="gdot CTRL"></span>CTRL</td><td class="r">5</td><td class="r">41.1–49.8</td><td class="r">64–79</td><td class="r">94.8 ± 1.3</td><td class="r">34–47</td></tr>
+          <tr><td><span class="gdot T24h"></span>T24h</td><td class="r">5</td><td class="r">42.7–50.7</td><td class="r"><b class="g-t24">38–44</b></td><td class="r">95.4 ± 0.4</td><td class="r">33–38</td></tr>
+          <tr><td><span class="gdot D7"></span>D7</td><td class="r">5</td><td class="r">42.5–50.7</td><td class="r">55–83</td><td class="r">95.4 ± 0.4</td><td class="r">41–46</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="tbl-note">Table 2. Per-group quality control and alignment summary.</p>
+
+    <div class="two" style="margin-top:2rem;align-items:start">
+      <figure>
+        <button class="plate" type="button" data-zoom="static/images/fig3_pca_qc.png" data-cap="Figure 3. PCA of the top-1000-variance VST-normalized counts, coloured by (a) condition, (b) FastQC duplication %, (c) percentage of read pairs assigned to genes, and (d) library size.">
+          <img src="static/images/fig3_pca_qc.png" alt="Four PCA panels of the 15 samples coloured by condition, duplication rate, assigned read percentage and library size." loading="lazy">
+          <span class="zoom">click to zoom</span>
+        </button>
+        <figcaption><b>Figure 3.</b> PCA of the top-1000-variance VST-normalized counts, coloured by (a) condition, (b) FastQC duplication %, (c) percentage of read pairs assigned to genes by featureCounts, and (d) library size (M read pairs).</figcaption>
+      </figure>
+      <div class="card">
+        <span class="k">EXTENDED · PC1 AGAINST A QC METRIC</span>
+        <div class="toolbar" style="margin-bottom:0">
+          <div class="seg" id="metricSeg" role="group" aria-label="QC metric">
+            <button type="button" data-m="dup" aria-pressed="true">Duplication</button>
+            <button type="button" data-m="asg" aria-pressed="false">Assigned</button>
+            <button type="button" data-m="lib" aria-pressed="false">Library size</button>
+          </div>
+          <span class="rbadge" id="rBadge"></span>
+        </div>
+        <svg class="scatter" id="scatter" viewBox="0 0 440 300" role="img" aria-label="Scatter plot of PC1 against the selected QC metric for 15 samples"></svg>
+        <div class="legend"><span><i style="background:var(--g-ctrl)"></i>CTRL</span><span><i style="background:var(--g-t24)"></i>T24h</span><span><i style="background:var(--g-d7)"></i>D7</span></div>
+        <p class="small muted">PC1 (48.1% of variance) correlates with duplication (r = −0.905, p &lt; 10<sup>−4</sup>) and assigned reads (r = −0.848, p = 0.0001), but not with library size (r = −0.261, p = 0.35). The apparent group separation is partly confounded with library complexity.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DE ============ -->
+<section class="sec" id="de">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Results · RQ1 &amp; RQ2 · Figure 4</span>
+      <h2>Default normalization: a large acute response</h2>
+      <p class="lede read">Under default DESeq2 median-of-ratios normalization, the three cross-sectional contrasts yield thousands of DEGs at 24 h and a much smaller subacute signature at 7 d.</p>
+    </div>
+    <div class="two" style="align-items:start">
+      <figure>
+        <button class="plate" type="button" data-zoom="static/images/fig4_volcano.png" data-cap="Figure 4. T24h vs. CTRL volcano plot (x: log2 fold-change, y: −log10 padj). PPBP/CXCL7 is the most strongly down-regulated gene.">
+          <img src="static/images/fig4_volcano.png" alt="Volcano plot of T24h versus control: thousands of significant up- and down-regulated genes." loading="lazy">
+          <span class="zoom">click to zoom</span>
+        </button>
+        <figcaption><b>Figure 4.</b> T24h vs. CTRL volcano plot (x: log<sub>2</sub> fold-change, y: −log<sub>10</sub> p<sub>adj</sub>). PPBP/CXCL7 is the most strongly down-regulated gene.</figcaption>
+      </figure>
+      <div class="stack">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Contrast</th><th class="r">DEGs</th><th class="r">Up</th><th class="r">Down</th></tr></thead>
+            <tbody>
+              <tr><td><b class="g-t24">T24h</b> vs. <b class="g-ctrl">CTRL</b></td><td class="r"><b>9,219</b></td><td class="r">5,212</td><td class="r">4,007</td></tr>
+              <tr><td><b class="g-d7">D7</b> vs. <b class="g-ctrl">CTRL</b></td><td class="r"><b>92</b></td><td class="r">65</td><td class="r">27</td></tr>
+              <tr><td><b class="g-t24">T24h</b> vs. <b class="g-d7">D7</b></td><td class="r"><b>5,851</b></td><td class="r">3,186</td><td class="r">2,665</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <span class="k">24 H · KEY GENES</span>
+          <p>The strongest down-regulated gene at 24 h was <b>PPBP/CXCL7</b> (log<sub>2</sub>FC = −4.69), consistent with platelet consumption at the cerebral thrombus. Notable up-regulated genes included ELANE (neutrophil elastase), S100A12 (alarmin) and the interferon-induced chemokines CXCL9/CXCL10.</p>
+        </div>
+        <div class="card">
+          <span class="k">7 D · KEY GENES</span>
+          <p>Of the 92 D7 DEGs, <b>82 (89%)</b> were also significant at 24 h. The most striking D7 finding was up-regulation of the dual-specificity phosphatases <b>DUSP2</b> and <b>DUSP8</b>, which dephosphorylate ERK and p38 MAP-kinases.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SENSITIVITY ============ -->
+<section class="sec alt" id="sensitivity">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Results · RQ3 · Sensitivity to unwanted variation · Table 3 · Figure 5</span>
+      <h2>RUVg collapses the 24 h signal; the 7 d signal holds</h2>
+      <p class="lede read">The first RUVg latent factor W<sub>1</sub> correlates r = +0.916 (p &lt; 10<sup>−4</sup>) with the FastQC duplication rate, confirming it captures the technical variation seen in Figure 3. Choose an analysis to compare DEG counts.</p>
+    </div>
+    <div class="two" style="align-items:start">
+      <div class="card">
+        <span class="k">EXTENDED · DEG COUNTS WITH UP / DOWN SPLIT</span>
+        <div class="seg" id="methodSeg" role="group" aria-label="Normalization strategy" style="flex-wrap:wrap"></div>
+        <div class="sens" id="sens" style="margin-top:.6rem"></div>
+        <div class="updn"><span><i style="background:var(--accent)"></i>up-regulated</span><span><i style="background:var(--ehr)"></i>down-regulated</span><span class="muted">bar length on log scale</span></div>
+      </div>
+      <div class="stack">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Method</th><th class="r">T24h:CTRL</th><th class="r">D7:CTRL</th><th class="r">T24h:D7</th></tr></thead>
+            <tbody>
+              <tr><td>Default (median-of-ratios)</td><td class="r">9,219</td><td class="r">92</td><td class="r">5,851</td></tr>
+              <tr class="total"><td>RUVg (k = 2)</td><td class="r">28</td><td class="r">63</td><td class="r">64</td></tr>
+              <tr><td>Strict filter (≥ 20 in ≥ 8)</td><td class="r">6,912</td><td class="r">86</td><td class="r">4,472</td></tr>
+              <tr><td>~neutrophil-score + cond.</td><td class="r">9,420</td><td class="r">19</td><td class="r">5,881</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="tbl-note">Table 3. DEG counts under four normalization / adjustment strategies (p<sub>adj</sub> &lt; 0.05, |log<sub>2</sub>FC| &gt; 1).</p>
+        <p class="callout">T24h vs. CTRL falls from 9,219 to 28 after RUVg; T24h vs. D7 from 5,851 to 64. D7 vs. CTRL is comparatively robust (92 → 63, 32% loss), suggesting a small but reproducible subacute effect that survives complexity correction. A stricter pre-filter preserves the default pattern, and adjusting for the granulocyte score barely changes the T24h count, so composition is not the dominant confound.</p>
+      </div>
+    </div>
+    <figure style="margin-top:2rem">
+      <button class="plate" type="button" data-zoom="static/images/fig5_pca_ruvg.png" data-cap="Figure 5. PCA of top-1000-variance features before (left) and after (right) RUVg correction (k = 2).">
+        <img src="static/images/fig5_pca_ruvg.png" alt="Two PCA panels: before RUVg the T24h samples form a separate cluster; after RUVg they mix with control and D7 samples." loading="lazy">
+        <span class="zoom">click to zoom</span>
+      </button>
+      <figcaption><b>Figure 5.</b> PCA of top-1000-variance features before (left) and after (right) RUVg correction (k = 2). After removing the two latent factors the residual group separation is substantially attenuated, particularly for T24h.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ============ SUBSAMPLING & COMPOSITION ============ -->
+<section class="sec" id="composition">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Results · Sample-size &amp; composition sensitivity · Table 4 · Figure 6</span>
+      <h2>The 7 d signal is under-powered; cell mix is not the confound</h2>
+    </div>
+    <div class="two" style="align-items:start">
+      <div class="stack">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Contrast</th><th class="r">Median (n = 3)</th><th class="r">Range</th><th class="r">Full (n = 5)</th></tr></thead>
+            <tbody>
+              <tr><td>T24h vs. CTRL</td><td class="r">8,098</td><td class="r">[7,941, 8,119]</td><td class="r">9,219</td></tr>
+              <tr class="total"><td>D7 vs. CTRL</td><td class="r">0</td><td class="r">[0, 8]</td><td class="r">92</td></tr>
+              <tr><td>T24h vs. D7</td><td class="r">4,857</td><td class="r">[4,144, 5,178]</td><td class="r">5,851</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="tbl-note">Table 4. 3-of-5 subsampling DEG counts (3 iterations per contrast) vs. full n = 5.</p>
+        <p class="callout">The D7 vs. CTRL signature is highly sample-size sensitive (median 0 DEGs at n = 3 vs. 92 at n = 5), whereas T24h contrasts are stable across subsamples, consistent with the technical (library-complexity) reading of the T24h signal.</p>
+        <div class="card">
+          <span class="k">EXTENDED · MEAN MARKER SCORES BY GROUP (LOG<sub>2</sub> CPM)</span>
+          <div class="tbl-wrap" style="border:0">
+            <table>
+              <thead><tr><th>Score</th><th class="r"><span class="gdot CTRL"></span>CTRL</th><th class="r"><span class="gdot T24h"></span>T24h</th><th class="r"><span class="gdot D7"></span>D7</th></tr></thead>
+              <tbody>
+                <tr><td>Granulocyte (10 markers)</td><td class="r">4.22</td><td class="r">4.00</td><td class="r">4.83</td></tr>
+                <tr><td>T cell (CD3D)</td><td class="r">7.45</td><td class="r">5.82</td><td class="r">6.74</td></tr>
+                <tr><td>B cell (CD19)</td><td class="r">4.16</td><td class="r">3.12</td><td class="r">3.98</td></tr>
+                <tr><td>Monocyte (CD14)</td><td class="r">9.42</td><td class="r">7.65</td><td class="r">9.00</td></tr>
+                <tr><td>NK cell (NCAM1)</td><td class="r">3.69</td><td class="r">5.23</td><td class="r">3.73</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="small muted">Single-marker scores are descriptive only; the paper's composition test uses the 10-gene granulocyte score.</p>
+        </div>
+      </div>
+      <div class="stack">
+        <figure>
+          <button class="plate" type="button" data-zoom="static/images/fig6_granulocyte.png" data-cap="Figure 6. (a) Heatmap of 10 canonical granulocyte / neutrophil markers across the 15 samples. (b) Group-level marker-score distribution; Kruskal–Wallis p = 0.31.">
+            <img src="static/images/fig6_granulocyte.png" alt="Heatmap of 10 granulocyte markers across samples and a box plot of the marker score by group, Kruskal-Wallis p = 0.31." loading="lazy">
+            <span class="zoom">click to zoom</span>
+          </button>
+          <figcaption><b>Figure 6.</b> (a) Heatmap of 10 canonical granulocyte / neutrophil markers across the 15 samples. (b) Group-level marker-score distribution; Kruskal–Wallis p = 0.31.</figcaption>
+        </figure>
+        <div class="card">
+          <span class="k">GRANULOCYTE MARKER PANEL</span>
+          <div class="markers"><code>ELANE</code><code>MPO</code><code>DEFA1</code><code>CTSG</code><code>LTF</code><code>S100A8</code><code>S100A9</code><code>PRTN3</code><code>AZU1</code><code>CEACAM8</code></div>
+          <p>Individual markers point opposite to the low-density-granulocyte contamination hypothesis: ELANE log<sub>2</sub> CPM is 2.94 (CTRL) vs. 1.78 (T24h), 2.2 times lower in T24h; MPO shows the same pattern.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ENRICHMENT ============ -->
+<section class="sec alt" id="enrichment">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Results · RQ3 · Functional enrichment · Figure 7</span>
+      <h2>Four themes at 24 h, read as hypotheses</h2>
+      <p class="lede read">On the default T24h vs. CTRL DEG list, KEGG over-representation identified 12 enriched pathways, grouped into four themes.</p>
+    </div>
+    <div class="two" style="align-items:start">
+      <figure>
+        <button class="plate" type="button" data-zoom="static/images/fig7_kegg.png" data-cap="Figure 7. KEGG pathway enrichment of the T24h vs. CTRL DEG list under default normalization.">
+          <img src="static/images/fig7_kegg.png" alt="KEGG dot plot of 12 enriched pathways for T24h versus control, led by Ribosome." loading="lazy">
+          <span class="zoom">click to zoom</span>
+        </button>
+        <figcaption><b>Figure 7.</b> KEGG pathway enrichment of the T24h vs. CTRL DEG list under default normalization. <i>Ribosome</i> is the most strongly enriched pathway (p<sub>adj</sub> = 1.36 × 10<sup>−33</sup>); <i>Neutrophil extracellular trap formation</i> drives the immunothrombosis signature (p<sub>adj</sub> = 1.38 × 10<sup>−11</sup>).</figcaption>
+      </figure>
+      <div class="stack">
+        <div class="three" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr)">
+          <div class="card"><span class="k">RIBOSOMAL BIOGENESIS</span><p><i>Ribosome</i>, p<sub>adj</sub> = 1.36 × 10<sup>−33</sup>, 112 genes</p></div>
+          <div class="card"><span class="k">IMMUNOTHROMBOSIS</span><p><i>NET formation</i>, p<sub>adj</sub> = 1.38 × 10<sup>−11</sup></p></div>
+          <div class="card"><span class="k">METABOLIC REPROGRAMMING</span><p><i>Oxidative phosphorylation</i></p></div>
+          <div class="card"><span class="k">CHROMATIN</span><p>Histone-driven chromatin remodelling</p></div>
+        </div>
+        <div class="card">
+          <span class="k">GO-BP · GSEA · 7 D</span>
+          <dl class="kv">
+            <dt>GO-BP (24 h)</dt><dd>63 terms, dominated by antimicrobial humoral response and neutrophil activation</dd>
+            <dt>GSEA</dt><dd>189 GO-BP terms at T24h, 155 at D7 (Ribosome biogenesis NES +3.2, mRNA translation +2.9, neutrophil activation +2.7)</dd>
+            <dt>D7 KEGG</dt><dd><i>Efferocytosis</i> and <i>Homologous recombination</i></dd>
+            <dt>D7 GO-BP</dt><dd>six terms, all MAP-kinase phosphatase activity (DUSP2/DUSP8)</dd>
+          </dl>
+        </div>
+        <p class="callout">Under RUVg correction the T24h DEG list collapses to 28 genes, and no KEGG or GO-BP term reaches p<sub>adj</sub> &lt; 0.05 in any contrast. The NET-formation enrichment appears only in the down-regulated direction. We therefore report the acute-phase enrichments as hypotheses conditional on unwanted-variation modelling assumptions.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DISCUSSION ============ -->
+<section class="sec" id="discussion">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Discussion</span>
+      <h2>What this shows, and what it does not</h2>
+    </div>
+    <div class="three">
+      <div class="card">
+        <span class="k">ROBUST</span>
+        <h4>Subacute signature and platelet signal</h4>
+        <p>The 7 d signature keeps 63 of 92 DEGs under RUVg, and the PPBP/CXCL7 depression, a strong single-gene monotonic effect, survives as well.</p>
+      </div>
+      <div class="card">
+        <span class="k">CONDITIONAL</span>
+        <h4>The acute 24 h call set</h4>
+        <p>PC1 tracks duplication (r = −0.905) and RUVg removes 99.7% of the T24h DEGs. The acute DGE list should be treated as a hypothesis conditional on unwanted-variation modelling.</p>
+      </div>
+      <div class="card">
+        <span class="k">RECOMMENDATION</span>
+        <h4>Report both normalizations</h4>
+        <p>Investigators reanalysing cross-cohort blood transcriptomic datasets should routinely report QC-coloured PCA and DEG counts under both default and RUVg-adjusted normalization.</p>
+      </div>
+    </div>
+    <div class="two" style="margin-top:1.25rem">
+      <div class="card">
+        <span class="k">LIMITATIONS</span>
+        <ul class="lim" style="margin:0;padding-left:1.1rem;color:var(--ink-2)">
+          <li>n = 5 per group from a single cohort: hypothesis-generating only</li>
+          <li>Cannot establish brain-tissue neutrophil activity, cell-type mechanisms or prognostic panels; no clinical outcomes analysed</li>
+          <li>Read pairs assigned to genes (34–47%) below the ~60% benchmark</li>
+          <li>Only two post-stroke timepoints</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="k">FUTURE WORK</span>
+        <ul class="lim" style="margin:0;padding-left:1.1rem;color:var(--ink-2)">
+          <li>Longitudinal sampling of the same patients</li>
+          <li>Single-cell RNA-Seq to resolve cell-type programs</li>
+          <li>Outcome-annotated cohorts with matched library-preparation protocols</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ AVAILABILITY & CITATION ============ -->
+<section class="sec alt" id="citation">
+  <div class="wrap">
+    <div class="two">
+      <div class="stack" id="availability">
+        <div class="sec-head" style="margin-bottom:0">
+          <span class="eyebrow">Data &amp; code availability</span>
+          <h2>Open and reproducible</h2>
+        </div>
+        <div class="card">
+          <span class="k">DATASET</span>
+          <p>NCBI GEO <a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE122709" target="_blank" rel="noopener">GSE122709</a> · BioProject PRJNA506047 · SRA SRR8207876–SRR8207890.</p>
+        </div>
+        <div class="card">
+          <span class="k">CODE</span>
+          <p>Scripts for preprocessing, QC, alignment, quantification, differential expression, enrichment and figures, with environment configuration: <a href="https://github.com/CIMILab/GEA-RNA-Seq" target="_blank" rel="noopener">github.com/CIMILab/GEA-RNA-Seq</a>.</p>
+        </div>
+      </div>
+      <div class="stack">
+        <div class="sec-head" style="margin-bottom:0">
+          <span class="eyebrow">Citation</span>
+          <h2>BibTeX</h2>
+        </div>
+        <div class="cite">
+          <button class="copy-btn" type="button" id="copyBtn">Copy</button>
+<pre id="bibtex">@inproceedings{dey2026stroke,
+  title     = {Differential Gene Expression Analysis of
+               Peripheral Blood {RNA-Seq} Data in Acute
+               Ischemic Stroke Patients},
+  author    = {Dey, Samrat Kumar and Shakkour, Zaynab},
+  booktitle = {Proceedings of the 4th International Conference
+               on Computing Advancements (ICCA 2026)},
+  year      = {2026},
+  address   = {Dhaka, Bangladesh},
+  publisher = {ACM}
+}</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>Differential Gene Expression Analysis of Peripheral Blood RNA-Seq Data in Acute Ischemic Stroke Patients · MU Institute for Data Science and Informatics, University of Missouri</span>
+    <span>ICCA 2026 · Paper 208</span>
+  </div>
+</footer>
+
+<dialog class="lightbox" id="lightbox" aria-label="Figure viewer">
+  <button type="button" id="lbClose">Close ✕</button>
+  <img id="lbImg" alt="">
+  <p id="lbCap"></p>
+</dialog>
+
+<script src="static/js/main.js"></script>
+</body>
+</html>
